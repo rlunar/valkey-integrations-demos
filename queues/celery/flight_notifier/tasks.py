@@ -33,15 +33,15 @@ def send_email(passenger_data: dict, message: str):
     """
     # Deserialize the dictionary back into our Pydantic model
     passenger = Passenger(**passenger_data)
-    print(f"\n[EMAIL TASK]... Initiating email send to {passenger.email}")
+    print(f"\n[📧 EMAIL TASK]... Initiating email send to {passenger.email}")
 
     # Simulate a network call to an email API (e.g., SendGrid, Mailgun)
     time.sleep(1)  # Simulate 1-second API call
 
     print(
-        f"[EMAIL TASK]... SUCCESS: Sent '{message}' to {passenger.name} ({passenger.email})"
+        f"[📧 EMAIL TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} ({passenger.email})"
     )
-    return f"Email sent to {passenger.email}"
+    return f"📧 Email sent to {passenger.email}"
 
 
 @app.task(name="notifications.send_sms")
@@ -50,15 +50,15 @@ def send_sms(passenger_data: dict, message: str):
     Simulates sending an SMS to a passenger.
     """
     passenger = Passenger(**passenger_data)
-    print(f"\n[SMS TASK]... Initiating SMS send to {passenger.phone_number}")
+    print(f"\n[📱 SMS TASK]... Initiating SMS send to {passenger.phone_number}")
 
     # Simulate a network call to an SMS gateway (e.g., Twilio)
     time.sleep(3)  # Simulate a SLOW 3-second API call
 
     print(
-        f"[SMS TASK]... SUCCESS: Sent '{message}' to {passenger.name} ({passenger.phone_number})"
+        f"[📱 SMS TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} ({passenger.phone_number})"
     )
-    return f"SMS sent to {passenger.phone_number}"
+    return f"📱 SMS sent to {passenger.phone_number}"
 
 
 @app.task(name="notifications.send_push_notification")
@@ -69,21 +69,21 @@ def send_push_notification(passenger_data: dict, message: str):
     passenger = Passenger(**passenger_data)
     if not passenger.push_token:
         print(
-            f"\n[PUSH TASK]... SKIPPED: Passenger {passenger.name} has no push token."
+            f"\n[📳 PUSH TASK]... ⏩ SKIPPED: Passenger {passenger.name} has no push token."
         )
         return "No push token"
 
     print(
-        f"\n[PUSH TASK]... Initiating push notification to token {passenger.push_token}"
+        f"\n[📳 PUSH TASK]... Initiating push notification to token {passenger.push_token}"
     )
 
     # Simulate a network call (e.g., to APNS or Firebase)
     time.sleep(0.5)  # Push notifications are usually fast
 
     print(
-        f"[PUSH TASK]... SUCCESS: Sent '{message}' to {passenger.name} (token: {passenger.push_token[:10]}...)"
+        f"[📳 PUSH TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} (token: {passenger.push_token[:10]}...)"
     )
-    return f"Push sent to {passenger.push_token}"
+    return f"📳 Push sent to {passenger.push_token}"
 
 
 # 3. Define our "main" task that fans out the work
@@ -96,21 +96,21 @@ def process_flight_status_update(flight_data: dict):
     It finds all passengers and triggers the individual notification tasks.
     """
     flight = Flight(**flight_data)
-    print(f"\n--- PROCESSING flight {flight.id} status change: {flight.status} ---")
+    print(f"\n--- PROCESSING ⚙️ flight {flight.id} status change: {flight.status} ---")
 
     # --- In a real app, you would fetch this from your database ---
     # We'll mock this data for the demo.
     mock_passengers = [
         Passenger(
             id=1,
-            name="Jane Doe",
+            name="Jane Doe 👩",
             email="jane@example.com",
             phone_number="+1555123456",
             push_token="push-token-jane-abc",
         ),
         Passenger(
             id=2,
-            name="John Doe",
+            name="John Doe 👱‍♂️",
             email="john@example.com",
             phone_number="+1555654321",
             push_token=None,
@@ -118,7 +118,7 @@ def process_flight_status_update(flight_data: dict):
     ]
     # --- End of mock data ---
 
-    message = f"Flight {flight.id} update: Your flight status is now {flight.status}."
+    message = f"🛩️ Flight {flight.id} update: Your flight status is now {flight.status}."
 
     # Fan out the work!
     # We call .delay() on each sub-task to send it to the Celery queue.
@@ -130,4 +130,4 @@ def process_flight_status_update(flight_data: dict):
         send_sms.delay(passenger_dict, message)
         send_push_notification.delay(passenger_dict, message)
 
-    print(f"--- All notifications for flight {flight.id} have been queued. ---")
+    print(f"--- ☑️ All notifications for flight {flight.id} have been queued. ---")

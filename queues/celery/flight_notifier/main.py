@@ -12,10 +12,10 @@ def trigger_flight_delay():
     # 1. Create our flight data
     delayed_flight = Flight(
         id="AF249",
-        airline="France Air",
+        airline="France Air 🇫🇷",
         departure_airport="CDG",
         arrival_airport="BER",
-        status="DELAYED",
+        status="DELAYED ⌛",
     )
 
     # 2. Send the main task to the Celery queue
@@ -36,10 +36,10 @@ def trigger_flight_boarding():
 
     boarding_flight = Flight(
         id="GA006",
-        airline="Deutsche Flughafen",
+        airline="Deutsche Flughafen 🇩🇪",
         departure_airport="BER",
         arrival_airport="MRS",
-        status="BOARDING",
+        status="BOARDING ✈️",
     )
 
     process_flight_status_update.delay(boarding_flight.model_dump())
