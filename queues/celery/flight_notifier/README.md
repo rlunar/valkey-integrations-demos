@@ -23,32 +23,46 @@ This project shows how to build a scalable notification system that processes fl
 ## Quick Start
 
 ### Prerequisites
-- Python 3.8+
+- Python 3.12+
 - Valkey/Redis server
 - uv (Python package manager)
 
 ### 1. Setup
-```bash
-# Install dependencies
-uv sync
 
-# Start Valkey instances
+1.1 Install dependencies
+
+```bash
+uv sync
+```
+
+1.2 Start Valkey instance for Broker
+
+```bash
 docker run -d -p 6379:6379 --name valkey-broker valkey/valkey:latest
+```
+
+1.3 Start Valkey instance for Backend
+
+```bash
 docker run -d -p 6380:6380 --name valkey-backend valkey/valkey:latest
 ```
 
 ### 2. Start Celery Worker
+
 ```bash
 uv run celery -A tasks worker --loglevel=info
 ```
 
 ### 3. Trigger Flight Updates
+
 ```bash
 uv run python main.py
 ```
 
 ### 4. Monitor Results
+
 Watch the worker terminal to see parallel processing of:
+
 - Email notifications (~1s each)
 - SMS notifications (~3s each) 
 - Push notifications (~0.5s each)

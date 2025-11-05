@@ -4,8 +4,8 @@ from celery import Celery
 from models import Passenger, Flight  # Import our Pydantic models
 
 # 1. Configure Celery
-# We point it to our Redis instance as the broker.
-# The 'backend' is also Redis; this is used to store task results.
+# We point it to our Valkey instance as the broker.
+# The 'backend' is also Valkey; this is used to store task results.
 app = Celery(
     "flight_tasks",
     broker="redis://localhost:6379/0",
@@ -34,13 +34,9 @@ def send_email(passenger_data: dict, message: str):
     # Deserialize the dictionary back into our Pydantic model
     passenger = Passenger(**passenger_data)
     print(f"\n[📧 EMAIL TASK]... Initiating email send to {passenger.email}")
-
     # Simulate a network call to an email API (e.g., SendGrid, Mailgun)
-    time.sleep(1)  # Simulate 1-second API call
-
-    print(
-        f"[📧 EMAIL TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} ({passenger.email})"
-    )
+    time.sleep(2)  # Simulate 1-second API call
+    print(f"[📧 EMAIL TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} ({passenger.email})")
     return f"📧 Email sent to {passenger.email}"
 
 
@@ -51,13 +47,9 @@ def send_sms(passenger_data: dict, message: str):
     """
     passenger = Passenger(**passenger_data)
     print(f"\n[📱 SMS TASK]... Initiating SMS send to {passenger.phone_number}")
-
     # Simulate a network call to an SMS gateway (e.g., Twilio)
     time.sleep(3)  # Simulate a SLOW 3-second API call
-
-    print(
-        f"[📱 SMS TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} ({passenger.phone_number})"
-    )
+    print(f"[📱 SMS TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} ({passenger.phone_number})")
     return f"📱 SMS sent to {passenger.phone_number}"
 
 
@@ -68,21 +60,12 @@ def send_push_notification(passenger_data: dict, message: str):
     """
     passenger = Passenger(**passenger_data)
     if not passenger.push_token:
-        print(
-            f"\n[📳 PUSH TASK]... ⏩ SKIPPED: Passenger {passenger.name} has no push token."
-        )
+        print(f"\n[📳 PUSH TASK]... ⏩ SKIPPED: Passenger {passenger.name} has no push token.")
         return "No push token"
-
-    print(
-        f"\n[📳 PUSH TASK]... Initiating push notification to token {passenger.push_token}"
-    )
-
+    print(f"\n[📳 PUSH TASK]... Initiating push notification to token {passenger.push_token}")
     # Simulate a network call (e.g., to APNS or Firebase)
-    time.sleep(0.5)  # Push notifications are usually fast
-
-    print(
-        f"[📳 PUSH TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} (token: {passenger.push_token[:10]}...)"
-    )
+    time.sleep(1.5)  # Push notifications are usually fast
+    print(f"[📳 PUSH TASK]... ✅ SUCCESS: Sent '{message}' to {passenger.name} (token: {passenger.push_token[:10]}...)")
     return f"📳 Push sent to {passenger.push_token}"
 
 
@@ -97,7 +80,6 @@ def process_flight_status_update(flight_data: dict):
     """
     flight = Flight(**flight_data)
     print(f"\n--- PROCESSING ⚙️ flight {flight.id} status change: {flight.status} ---")
-
     # --- In a real app, you would fetch this from your database ---
     # We'll mock this data for the demo.
     mock_passengers = [
@@ -117,17 +99,13 @@ def process_flight_status_update(flight_data: dict):
         ),  # John doesn't get push notifications
     ]
     # --- End of mock data ---
-
     message = f"🛩️ Flight {flight.id} update: Your flight status is now {flight.status}."
-
     # Fan out the work!
     # We call .delay() on each sub-task to send it to the Celery queue.
     for passenger in mock_passengers:
         # We pass the Pydantic model as a dict, as it's easier to serialize.
         passenger_dict = passenger.model_dump()
-
         send_email.delay(passenger_dict, message)
         send_sms.delay(passenger_dict, message)
         send_push_notification.delay(passenger_dict, message)
-
     print(f"--- ☑️ All notifications for flight {flight.id} have been queued. ---")
