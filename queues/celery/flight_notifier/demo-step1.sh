@@ -6,13 +6,21 @@ set -e
 # Print commands before executing
 set -x
 
+logo-ls -lah
+
+read -p "Press enter to continue"
+
 podman ps
 
 read -p "Press enter to continue"
 
 glow pyproject.toml -t -l
 
+read -p "Press enter to continue"
+
 uv sync
+
+read -p "Press enter to continue"
 
 glow models.py -t -l
 
