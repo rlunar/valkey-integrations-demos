@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Valkey (Redis-compatible) message broker
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    volumes:
+      - valkey_data:/data
+    command: valkey-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Email notification worker
+  worker-email:
+    build: .
+    container_name: worker-email
+    command: celery -A celery_config worker --loglevel=info -Q email -n email_worker@%h
+    depends_on:
+      valkey:
+        condition: service_healthy
+    environment:
+      - VALKEY_URL=redis://valkey:6379/0
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # SMS notification worker
+  worker-sms:
+    build: .
+    container_name: worker-sms
+    command: celery -A celery_config worker --loglevel=info -Q sms -n sms_worker@%h
+    depends_on:
+      valkey:
+        condition: service_healthy
+    environment:
+      - VALKEY_URL=redis://valkey:6379/0
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # Push notification worker
+  worker-push:
+    build: .
+    container_name: worker-push
+    command: celery -A celery_config worker --loglevel=info -Q push -n push_worker@%h
+    depends_on:
+      valkey:
+        condition: service_healthy
+    environment:
+      - VALKEY_URL=redis://valkey:6379/0
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  # Flower monitoring dashboard
+  flower:
+    build: .
+    container_name: flower
+    command: celery -A celery_config flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      valkey:
+        condition: service_healthy
+    environment:
+      - VALKEY_URL=redis://valkey:6379/0
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+volumes:
+  valkey_data:
+    driver: local
